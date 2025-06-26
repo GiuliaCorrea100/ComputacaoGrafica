@@ -16,6 +16,7 @@ GLuint leafTextureID; // textura folhas da arvore
 GLuint buoyTextureID; // textura boias
 GLuint mountainTextureID; // textura montamhas
 GLuint fishStripeTextureID; // listras peixe
+GLuint fishBodyTextureID; // corpo peixe
 
 // Função para carregar uma textura de um arquivo
 GLuint loadTexture(const char* filename) {
@@ -60,6 +61,7 @@ float fishAnimationTime = 0.0f;
 float fishRotation = 0.0f;
 float tailFlap = 0.0f;
 float cyclePhase = 0.0f; // Controla o ciclo de dia e noite
+float pupilAnimationTime = 0.0f;
  
 float waterTextureOffset = 0.0f;
 
@@ -348,6 +350,8 @@ void drawFishermanBody() {
 
 // Peixe com nadadeiras, olho e listras
 // Peixe com nadadeiras, olho e listras texturizadas
+// Peixe com nadadeiras, olho e listras texturizadas
+// Peixe com nadadeiras, olho e listras texturizadas
 void drawFish() {
     const float deltaY = 0.13f;
     const float scale = 1.5f;
@@ -359,26 +363,65 @@ void drawFish() {
     glRotatef(fishRotation, 0.0f, 0.0f, 1.0f);
     glTranslatef(-fishCenterX, -fishCenterY, 0.0f);
 
-    // --- PARTE 1: Desenhar partes SEM textura ---
-
-    // Corpo principal do peixe
+    // --- PARTE 1: Corpo do Peixe (COM textura) ---
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, fishBodyTextureID);
+    glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_POLYGON);
-    glColor3f(0.9f, 0.85f, 0.7f);
     for (int i = 0; i <= 360; i++) {
         float angle = i * 3.14159f / 180;
+        float tx = 0.5f + cos(angle) * 0.5f;
+        float ty = 0.5f + sin(angle) * 0.5f;
+        glTexCoord2f(tx, ty);
         float x = fishCenterX + (0.15f * scale) * cos(angle);
         float y = fishCenterY + (0.08f * scale) * sin(angle);
         glVertex2f(x, y);
     }
     glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    // --- PARTE 2: Desenhar LISTRAS COM textura ---
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, fishStripeTextureID);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    // Listra 1
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX - 0.11f * scale, fishCenterY - 0.05f * scale);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX - 0.08f * scale, fishCenterY - 0.065f * scale);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX - 0.08f * scale, fishCenterY + 0.065f * scale);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX - 0.11f * scale, fishCenterY + 0.05f * scale);
+    glEnd();
+    // Listra 2
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX - 0.05f * scale, fishCenterY - 0.075f * scale);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX - 0.02f * scale, fishCenterY - 0.078f * scale);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX - 0.02f * scale, fishCenterY + 0.078f * scale);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX - 0.05f * scale, fishCenterY + 0.075f * scale);
+    glEnd();
+    // Listra 3
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX + 0.01f * scale, fishCenterY - 0.078f * scale);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX + 0.04f * scale, fishCenterY - 0.07f * scale);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX + 0.04f * scale, fishCenterY + 0.07f * scale);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX + 0.01f * scale, fishCenterY + 0.078f * scale);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
     
-    // Cabeça e olho
-    glColor3f(1.0f, 0.95f, 0.85f);
-    drawCircle(fishCenterX + (0.05f * scale), fishCenterY, 0.05f * scale);
-    glColor3f(0, 0, 0);
-    float eyeOffsetX = 0.07f * scale;
-    float eyeOffsetY = (0.47f - 0.45f) * scale;
-    drawCircle(fishCenterX + eyeOffsetX, fishCenterY + eyeOffsetY, 0.01f * scale);
+    // --- PARTE 3: Detalhes Finais SEM textura ---
+    
+    // O branco do olho
+    glColor3f(1.0f, 1.0f, 1.0f); // Cor branca para o fundo do olho
+    float eyeWhiteCenterX = fishCenterX + (0.05f * scale);
+    float eyeWhiteCenterY = fishCenterY;
+    float eyeWhiteRadius = 0.05f * scale;
+    drawCircle(eyeWhiteCenterX, eyeWhiteCenterY, eyeWhiteRadius);
+
+    // Pupila preta ANIMADA
+    glColor3f(0, 0, 0); // Cor preta para a pupila
+    float pupilOrbitRadius = 0.02f * scale; // O quão longe a pupila se move do centro
+    float pupilX = eyeWhiteCenterX + cos(pupilAnimationTime) * pupilOrbitRadius;
+    float pupilY = eyeWhiteCenterY + sin(pupilAnimationTime) * pupilOrbitRadius;
+    drawCircle(pupilX, pupilY, 0.01f * scale); // Desenha a pupila na nova posição
     
     // Nadadeiras e cauda
     glColor3f(0.7f, 0.7f, 0.7f);
@@ -397,38 +440,6 @@ void drawFish() {
     glVertex2f(fishCenterX - (0.18f * scale) + tailFlap, fishCenterY + (0.05f * scale));
     glVertex2f(fishCenterX - (0.18f * scale) + tailFlap, fishCenterY - (0.05f * scale));
     glEnd();
-
-
-    // --- PARTE 2: Desenhar LISTRAS COM textura ---
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, fishStripeTextureID);
-    glColor3f(1.0f, 1.0f, 1.0f); // Cor branca para não tingir a textura
-
-    // Listra 1
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX - 0.11f * scale, fishCenterY - 0.05f * scale);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX - 0.08f * scale, fishCenterY - 0.065f * scale);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX - 0.08f * scale, fishCenterY + 0.065f * scale);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX - 0.11f * scale, fishCenterY + 0.05f * scale);
-    glEnd();
-    
-    // Listra 2
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX - 0.05f * scale, fishCenterY - 0.075f * scale);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX - 0.02f * scale, fishCenterY - 0.078f * scale);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX - 0.02f * scale, fishCenterY + 0.078f * scale);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX - 0.05f * scale, fishCenterY + 0.075f * scale);
-    glEnd();
-    
-    // Listra 3
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(fishCenterX + 0.01f * scale, fishCenterY - 0.078f * scale);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(fishCenterX + 0.04f * scale, fishCenterY - 0.07f * scale);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(fishCenterX + 0.04f * scale, fishCenterY + 0.07f * scale);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(fishCenterX + 0.01f * scale, fishCenterY + 0.078f * scale);
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
 
     glPopMatrix();
 }
@@ -459,6 +470,8 @@ void animate(int value) {
 
     waterTextureOffset += 0.0005f;
 
+    pupilAnimationTime += 0.03f;
+
     glutPostRedisplay();
     glutTimerFunc(16, animate, 0);
 }
@@ -483,6 +496,7 @@ int main(int argc, char** argv) {
     buoyTextureID = loadTexture("texturas/texturaBoia.jpg");
     mountainTextureID = loadTexture("texturas/texturaMontanhas.jpg");
     fishStripeTextureID = loadTexture("texturas/texturaListrasPeixe.jpg");
+    fishBodyTextureID = loadTexture("texturas/texturaPeixe.jpg");
 
     generateStars();
 
